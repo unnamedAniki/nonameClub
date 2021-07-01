@@ -1,0 +1,64 @@
+﻿@page "/Users"
+@using System.Net.Http.Json
+@inject HttpClient client
+@inject IJSRuntime js
+
+<h3>Developers</h3>
+<small>Add as many developers as you wish.</small>
+<div class="form-group">
+    <a class="btn btn-success" href="developer/create"><i class="oi oi-plus"></i> Create New</a>
+</div>
+<br>
+@if (users == null)
+{
+    <text>Loading...</text>
+}
+else if (users.Length == 0)
+{
+    <text>No Records Found.</text>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Experience (Years)</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (Users user in users)
+            {
+                <tr>
+                    <td>@user.Username</td>
+                    <td>@user.Roles.RoleName</td>
+                    <td>@user.Email</td>
+                    <td>
+                        <a class="btn btn-success" href="developer/edit/@user.UserId">Edit</a>
+                        <button class="btn btn-danger" @onclick="@(() => Delete(user.UserId))">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+	Users[] users { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+       var users = await client.GetFromJsonAsync<Users[]>("api/Users");
+    }
+    async Task Delete(int userId)
+    {
+        var dev = users.First(x => x.UserId == userId);
+        if (await js.InvokeAsync<bool>("confirm", $"Do you want to delete {dev.Username}'s ({dev.UserId}) Record?"))
+        {
+            await client.DeleteAsync($"api/Users/{userId}");
+            await OnInitializedAsync();
+        }
+    }
+}
